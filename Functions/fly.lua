@@ -1,81 +1,75 @@
--- MurderWare FlyScript v1.1 (Stabilized Jetpack Fly)
+-- MurderWare FlyScript v0.3 (BodyVelocity + Boost Edition)
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
-local Value = player:WaitForChild("PlayerGui"):WaitForChild("MurderWareGUI"):WaitForChild("Fly")
+local Value = player.PlayerGui:WaitForChild("MurderWareGUI"):WaitForChild("Fly")
 
-local flySpeed = 50 -- помедленнее, чтобы не кикало и не запускало на орбиту
 local flying = false
-local keys = {}
-
-local bodyGyro
 local bodyVelocity
+local bodyGyro
 
--- input
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if not gameProcessed then
-		keys[input.KeyCode] = true
-	end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-	keys[input.KeyCode] = false
-end)
+local flySpeed = 70 -- скорость полёта
 
 local function startFlying()
-	if bodyGyro then bodyGyro:Destroy() end
 	if bodyVelocity then bodyVelocity:Destroy() end
+	if bodyGyro then bodyGyro:Destroy() end
 
-	humanoid.PlatformStand = true
+	-- Выключаем все физические состояния
+	for _, state in ipairs(Enum.HumanoidStateType:GetEnumItems()) do
+		humanoid:SetStateEnabled(state, false)
+	end
 
-	bodyGyro = Instance.new("BodyGyro")
-	bodyGyro.P = 5000
-	bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-	bodyGyro.CFrame = rootPart.CFrame
-	bodyGyro.Parent = rootPart
+	local animate = character:FindFirstChild("Animate")
+	if animate then animate.Disabled = true end
 
-	bodyVelocity = Instance.new("BodyVelocity")
-	bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-	bodyVelocity.Velocity = Vector3.zero
-	bodyVelocity.P = 4000
-	bodyVelocity.Parent = rootPart
+	-- Подлёт вверх!
+	rootPart.Velocity = Vector3.new(0, 100, 0)
 
-	flying = true
+	-- Небольшая задержка перед началом полёта (подлёт)
+	task.delay(0.3, function()
+		bodyVelocity = Instance.new("BodyVelocity")
+		bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+		bodyVelocity.Velocity = Vector3.zero
+		bodyVelocity.P = 10_000
+		bodyVelocity.Parent = rootPart
 
-	RunService.RenderStepped:Connect(function()
-		if not flying then return end
+		bodyGyro = Instance.new("BodyGyro")
+		bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+		bodyGyro.P = 10_000
+		bodyGyro.CFrame = rootPart.CFrame
+		bodyGyro.Parent = rootPart
 
-		local cam = workspace.CurrentCamera
-		bodyGyro.CFrame = cam.CFrame
+		flying = true
 
-		local moveDir = Vector3.zero
-		if keys[Enum.KeyCode.W] then moveDir += cam.CFrame.LookVector end
-		if keys[Enum.KeyCode.S] then moveDir -= cam.CFrame.LookVector end
-		if keys[Enum.KeyCode.A] then moveDir -= cam.CFrame.RightVector end
-		if keys[Enum.KeyCode.D] then moveDir += cam.CFrame.RightVector end
-		if keys[Enum.KeyCode.Space] then moveDir += Vector3.new(0, 1, 0) end
-		if keys[Enum.KeyCode.LeftControl] then moveDir -= Vector3.new(0, 1, 0) end
-
-		if moveDir.Magnitude > 0 then
-			bodyVelocity.Velocity = moveDir.Unit * flySpeed
-		else
-			bodyVelocity.Velocity = Vector3.zero
-		end
+		RunService.RenderStepped:Connect(function()
+			if flying and bodyVelocity then
+				local moveDirection = humanoid.MoveDirection
+				bodyVelocity.Velocity = moveDirection * flySpeed
+				bodyGyro.CFrame = CFrame.new(Vector3.zero, moveDirection + Vector3.new(0, 0.01, 0)) -- Плавный поворот
+			end
+		end)
 	end)
 end
 
 local function stopFlying()
 	flying = false
-	if bodyGyro then bodyGyro:Destroy() end
+
 	if bodyVelocity then bodyVelocity:Destroy() end
-	humanoid.PlatformStand = false
+	if bodyGyro then bodyGyro:Destroy() end
+
+	for _, state in ipairs(Enum.HumanoidStateType:GetEnumItems()) do
+		humanoid:SetStateEnabled(state, true)
+	end
+
+	local animate = character:FindFirstChild("Animate")
+	if animate then animate.Disabled = false end
 end
 
+-- Обработка Value
 Value:GetPropertyChangedSignal("Value"):Connect(function()
 	if Value.Value then
 		startFlying()
@@ -84,6 +78,7 @@ Value:GetPropertyChangedSignal("Value"):Connect(function()
 	end
 end)
 
+-- Автостарт
 if Value.Value then
 	startFlying()
 end
