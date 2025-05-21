@@ -1,4 +1,4 @@
--- MurderWare FlyScript v1.1 (Stabilized Jetpack Fly)
+-- MurderWare FlyScript v1.2 (Jetpack Fly + Smooth Takeoff)
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -9,14 +9,14 @@ local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
 local Value = player:WaitForChild("PlayerGui"):WaitForChild("MurderWareGUI"):WaitForChild("Fly")
 
-local flySpeed = 50 -- помедленнее, чтобы не кикало и не запускало на орбиту
+local flySpeed = 50 -- скорость полёта
 local flying = false
 local keys = {}
 
 local bodyGyro
 local bodyVelocity
 
--- input
+-- Слежение за вводом
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if not gameProcessed then
 		keys[input.KeyCode] = true
@@ -33,39 +33,47 @@ local function startFlying()
 
 	humanoid.PlatformStand = true
 
-	bodyGyro = Instance.new("BodyGyro")
-	bodyGyro.P = 5000
-	bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-	bodyGyro.CFrame = rootPart.CFrame
-	bodyGyro.Parent = rootPart
+	-- Лёгкий подлёт вверх при старте
+	rootPart.Velocity = Vector3.new(0, 50, 0)
 
-	bodyVelocity = Instance.new("BodyVelocity")
-	bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-	bodyVelocity.Velocity = Vector3.zero
-	bodyVelocity.P = 4000
-	bodyVelocity.Parent = rootPart
+	-- Задержка 0.25 сек для подлёта
+	task.delay(0.25, function()
+		if not Value.Value then return end -- проверка, что ещё летаем
 
-	flying = true
+		bodyGyro = Instance.new("BodyGyro")
+		bodyGyro.P = 5000
+		bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+		bodyGyro.CFrame = rootPart.CFrame
+		bodyGyro.Parent = rootPart
 
-	RunService.RenderStepped:Connect(function()
-		if not flying then return end
+		bodyVelocity = Instance.new("BodyVelocity")
+		bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+		bodyVelocity.Velocity = Vector3.zero
+		bodyVelocity.P = 4000
+		bodyVelocity.Parent = rootPart
 
-		local cam = workspace.CurrentCamera
-		bodyGyro.CFrame = cam.CFrame
+		flying = true
 
-		local moveDir = Vector3.zero
-		if keys[Enum.KeyCode.W] then moveDir += cam.CFrame.LookVector end
-		if keys[Enum.KeyCode.S] then moveDir -= cam.CFrame.LookVector end
-		if keys[Enum.KeyCode.A] then moveDir -= cam.CFrame.RightVector end
-		if keys[Enum.KeyCode.D] then moveDir += cam.CFrame.RightVector end
-		if keys[Enum.KeyCode.Space] then moveDir += Vector3.new(0, 1, 0) end
-		if keys[Enum.KeyCode.LeftControl] then moveDir -= Vector3.new(0, 1, 0) end
+		RunService.RenderStepped:Connect(function()
+			if not flying then return end
 
-		if moveDir.Magnitude > 0 then
-			bodyVelocity.Velocity = moveDir.Unit * flySpeed
-		else
-			bodyVelocity.Velocity = Vector3.zero
-		end
+			local cam = workspace.CurrentCamera
+			bodyGyro.CFrame = cam.CFrame
+
+			local moveDir = Vector3.zero
+			if keys[Enum.KeyCode.W] then moveDir += cam.CFrame.LookVector end
+			if keys[Enum.KeyCode.S] then moveDir -= cam.CFrame.LookVector end
+			if keys[Enum.KeyCode.A] then moveDir -= cam.CFrame.RightVector end
+			if keys[Enum.KeyCode.D] then moveDir += cam.CFrame.RightVector end
+			if keys[Enum.KeyCode.Space] then moveDir += Vector3.new(0, 1, 0) end
+			if keys[Enum.KeyCode.LeftControl] then moveDir -= Vector3.new(0, 1, 0) end
+
+			if moveDir.Magnitude > 0 then
+				bodyVelocity.Velocity = moveDir.Unit * flySpeed
+			else
+				bodyVelocity.Velocity = Vector3.zero
+			end
+		end)
 	end)
 end
 
@@ -87,4 +95,3 @@ end)
 if Value.Value then
 	startFlying()
 end
-
