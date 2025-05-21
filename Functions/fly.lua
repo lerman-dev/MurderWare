@@ -1,75 +1,84 @@
--- MurderWare FlyScript v0.2 (BodyVelocity Edition)
+-- MurderWare FlyScript v1.0 (REAL FLY, not sliding)
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
-local Value = player.PlayerGui:WaitForChild("MurderWareGUI"):WaitForChild("Fly")
+local Value = player:WaitForChild("PlayerGui"):WaitForChild("MurderWareGUI"):WaitForChild("Fly")
 
+local flySpeed = 70
 local flying = false
-local bodyVelocity
+local bodyGyro, bodyVelocity
+local keys = {}
 
-local flySpeed = 70 -- настраивай под вкус
+-- Input
+UserInputService.InputBegan:Connect(function(input, processed)
+	if not processed then
+		keys[input.KeyCode] = true
+	end
+end)
 
+UserInputService.InputEnded:Connect(function(input)
+	keys[input.KeyCode] = false
+end)
+
+-- Fly Logic
 local function startFlying()
-    if bodyVelocity then bodyVelocity:Destroy() end
+	if bodyGyro then bodyGyro:Destroy() end
+	if bodyVelocity then bodyVelocity:Destroy() end
 
-    -- Remove unwanted states
-    for _, state in ipairs(Enum.HumanoidStateType:GetEnumItems()) do
-        humanoid:SetStateEnabled(state, false)
-    end
+	humanoid.PlatformStand = true
 
-    -- Disable animations
-    local animate = character:FindFirstChild("Animate")
-    if animate then animate.Disabled = true end
+	bodyGyro = Instance.new("BodyGyro")
+	bodyGyro.P = 9e4
+	bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bodyGyro.CFrame = rootPart.CFrame
+	bodyGyro.Parent = rootPart
 
-    bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-    bodyVelocity.Velocity = Vector3.zero
-    bodyVelocity.P = 10_000
-    bodyVelocity.Parent = rootPart
+	bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.Velocity = Vector3.zero
+	bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	bodyVelocity.P = 9e4
+	bodyVelocity.Parent = rootPart
 
-    flying = true
+	flying = true
 
-    RunService.RenderStepped:Connect(function()
-        if flying and bodyVelocity and humanoid.MoveDirection.Magnitude > 0 then
-            bodyVelocity.Velocity = humanoid.MoveDirection * flySpeed
-        elseif flying and bodyVelocity then
-            bodyVelocity.Velocity = Vector3.zero
-        end
-    end)
+	RunService.RenderStepped:Connect(function()
+		if flying then
+			local cam = workspace.CurrentCamera
+			bodyGyro.CFrame = cam.CFrame
+
+			local moveVec = Vector3.zero
+			if keys[Enum.KeyCode.W] then moveVec += cam.CFrame.LookVector end
+			if keys[Enum.KeyCode.S] then moveVec -= cam.CFrame.LookVector end
+			if keys[Enum.KeyCode.A] then moveVec -= cam.CFrame.RightVector end
+			if keys[Enum.KeyCode.D] then moveVec += cam.CFrame.RightVector end
+			if keys[Enum.KeyCode.Space] then moveVec += cam.CFrame.UpVector end
+			if keys[Enum.KeyCode.LeftControl] then moveVec -= cam.CFrame.UpVector end
+
+			bodyVelocity.Velocity = moveVec.Unit * flySpeed
+		end
+	end)
 end
 
 local function stopFlying()
-    flying = false
-
-    if bodyVelocity then
-        bodyVelocity:Destroy()
-        bodyVelocity = nil
-    end
-
-    -- Re-enable all states
-    for _, state in ipairs(Enum.HumanoidStateType:GetEnumItems()) do
-        humanoid:SetStateEnabled(state, true)
-    end
-
-    -- Re-enable animations
-    local animate = character:FindFirstChild("Animate")
-    if animate then animate.Disabled = false end
+	flying = false
+	if bodyGyro then bodyGyro:Destroy() end
+	if bodyVelocity then bodyVelocity:Destroy() end
+	humanoid.PlatformStand = false
 end
 
--- Connect toggle
 Value:GetPropertyChangedSignal("Value"):Connect(function()
-    if Value.Value then
-        startFlying()
-    else
-        stopFlying()
-    end
+	if Value.Value then
+		startFlying()
+	else
+		stopFlying()
+	end
 end)
 
--- Auto start
 if Value.Value then
-    startFlying()
+	startFlying()
 end
