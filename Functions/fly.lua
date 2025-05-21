@@ -1,7 +1,7 @@
 -- MurderWare FlyScript v0.1
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Value = game:WaitForChild("MWFly")
+local Value = game.ReplicatedStorage:WaitForChild("MWFly")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
