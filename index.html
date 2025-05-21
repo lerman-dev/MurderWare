@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MurderWare Chill Knives + Hunters</title>
+<title>MurderWare Chill Knives + Cubes</title>
 <style>
   body, html {
     margin: 0; padding: 0;
@@ -12,7 +12,7 @@
     overflow: hidden;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #eee;
-    cursor: auto; /* обычный курсор */
+    cursor: auto;
   }
 
   #fly-container {
@@ -21,6 +21,16 @@
     pointer-events: none;
     overflow: hidden;
     z-index: 0;
+  }
+
+  .cube {
+    position: absolute;
+    width: 30px; height: 30px;
+    background: crimson;
+    opacity: 0.7;
+    border-radius: 4px;
+    box-shadow: 0 0 10px crimson;
+    will-change: transform;
   }
 
   .knife {
@@ -57,8 +67,7 @@
 
 <script>
   const container = document.getElementById('fly-container');
-  const totalKnives = 10;
-  const hunterCount = 3; // Сколько ножей целятся в курсор
+  const totalCubes = 15;
 
   const knifeImgs = [
     'https://cdn.nookazon.com/mm2/items/4534866678.png',
@@ -76,8 +85,36 @@
     mouseY = e.clientY;
   });
 
+  // Класс кубика для chill фона
+  class Cube {
+    constructor() {
+      this.el = document.createElement('div');
+      this.el.classList.add('cube');
+      container.appendChild(this.el);
+
+      this.x = Math.random() * window.innerWidth;
+      this.y = Math.random() * window.innerHeight;
+      this.speedX = (Math.random() - 0.5) * 1.5;
+      this.speedY = (Math.random() - 0.5) * 1.5;
+    }
+
+    update() {
+      this.x += this.speedX;
+      this.y += this.speedY;
+
+      if (this.x < -30) this.x = window.innerWidth;
+      else if (this.x > window.innerWidth) this.x = -30;
+
+      if (this.y < -30) this.y = window.innerHeight;
+      else if (this.y > window.innerHeight) this.y = -30;
+
+      this.el.style.transform = `translate(${this.x}px, ${this.y}px)`;
+    }
+  }
+
+  // Класс ножа, который летит в курсор
   class Knife {
-    constructor(isHunter) {
+    constructor() {
       this.el = document.createElement('div');
       this.el.classList.add('knife');
       const img = document.createElement('img');
@@ -89,75 +126,47 @@
       this.y = Math.random() * window.innerHeight;
       this.rotation = Math.random() * 360;
       this.rotSpeed = (Math.random() - 0.5) * 4;
-      this.isHunter = isHunter;
-
-      // Скорость для “чила” и “охотников”
-      if (!isHunter) {
-        this.speedX = (Math.random() - 0.5) * 1.5;
-        this.speedY = (Math.random() - 0.5) * 1.5;
-      }
     }
 
     update() {
-      if (this.isHunter) {
-        // Летим к курсору
-        const dx = mouseX - this.x;
-        const dy = mouseY - this.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
+      const dx = mouseX - this.x;
+      const dy = mouseY - this.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
 
-        if (dist < 30) {
-          // Убрать нож и вернуть новый в рандом место
-          container.removeChild(this.el);
-          return false; // удаляем из массива
-        }
-
-        const speed = Math.min(dist / 10, 6);
-        const vx = (dx / dist) * speed;
-        const vy = (dy / dist) * speed;
-
-        this.x += vx;
-        this.y += vy;
-
-      } else {
-        // Просто летаем на фоне
-        this.x += this.speedX;
-        this.y += this.speedY;
-
-        // Зацикливание по краям
-        if (this.x < -70) this.x = window.innerWidth;
-        else if (this.x > window.innerWidth) this.x = -70;
-        if (this.y < -70) this.y = window.innerHeight;
-        else if (this.y > window.innerHeight) this.y = -70;
+      if (dist < 30) {
+        // Исчезаем и появляется новый нож с рандомной позицией
+        container.removeChild(this.el);
+        return false;
       }
 
-      // Вращение
+      const speed = Math.min(dist / 10, 6);
+      const vx = (dx / dist) * speed;
+      const vy = (dy / dist) * speed;
+
+      this.x += vx;
+      this.y += vy;
       this.rotation += this.rotSpeed;
       this.el.style.transform = `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
-      return true; // оставляем в массиве
+
+      return true;
     }
   }
 
-  let knives = [];
+  // Создаём кубики
+  const cubes = [];
+  for(let i = 0; i < totalCubes; i++) {
+    cubes.push(new Cube());
+  }
 
-  // Создаем охотников и "фоновиков"
-  for (let i = 0; i < hunterCount; i++) {
-    knives.push(new Knife(true));
-  }
-  for (let i = hunterCount; i < totalKnives; i++) {
-    knives.push(new Knife(false));
-  }
+  // Создаём один нож
+  let knife = new Knife();
 
   function animate() {
-    knives = knives.filter(knife => knife.update());
+    cubes.forEach(cube => cube.update());
 
-    // Добавляем новых охотников, если пропали
-    while (knives.filter(k => k.isHunter).length < hunterCount) {
-      knives.push(new Knife(true));
-    }
-
-    // Добавляем новых фоновиков, если пропали
-    while (knives.length < totalKnives) {
-      knives.push(new Knife(false));
+    if (!knife.update()) {
+      // если нож пропал, создаём новый
+      knife = new Knife();
     }
 
     requestAnimationFrame(animate);
