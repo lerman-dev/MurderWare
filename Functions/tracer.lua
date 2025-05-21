@@ -185,3 +185,16 @@ end)
 if Value.Value then
 	startTracing()
 end
+
+local function onDeath()
+	script:Destroy()
+end
+
+-- Called when a new character is spawned
+local function onCharacterAdded(char)
+	character = char
+	local humanoid = char:WaitForChild("Humanoid", 5)
+	if humanoid then
+		humanoid.Died:Connect(onDeath)
+	end
+end

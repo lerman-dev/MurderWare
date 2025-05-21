@@ -45,7 +45,7 @@ end)
 
 -- Called when the player dies, disables NoClip
 local function onDeath()
-	Value.Value = false
+	script:Destroy()
 end
 
 -- Called when a new character is spawned
