@@ -1,53 +1,43 @@
--- MurderWare FlyScript v0.2 (Fixed with deltaTime)
-
+-- MurderWare FlyScript v0.2 (BodyVelocity Edition)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
 local Value = player.PlayerGui:WaitForChild("MurderWareGUI"):WaitForChild("Fly")
 
 local flying = false
-local flySpeed = 3
+local bodyVelocity
+
+local flySpeed = 70 -- настраивай под вкус
 
 local function startFlying()
-    -- Disable humanoid states that interfere with flying
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, false)
+    if bodyVelocity then bodyVelocity:Destroy() end
 
-    -- Disable default animations for flying look
-    local animate = character:FindFirstChild("Animate")
-    if animate then
-        animate.Disabled = true
+    -- Remove unwanted states
+    for _, state in ipairs(Enum.HumanoidStateType:GetEnumItems()) do
+        humanoid:SetStateEnabled(state, false)
     end
+
+    -- Disable animations
+    local animate = character:FindFirstChild("Animate")
+    if animate then animate.Disabled = true end
+
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bodyVelocity.Velocity = Vector3.zero
+    bodyVelocity.P = 10_000
+    bodyVelocity.Parent = rootPart
 
     flying = true
 
-    -- Start flying loop with deltaTime to control speed properly
-    task.spawn(function()
-        local lastTime = tick()
-        while flying do
-            local now = tick()
-            local deltaTime = now - lastTime
-            lastTime = now
-
-            RunService.Heartbeat:Wait()
-
-            if humanoid.MoveDirection.Magnitude > 0 then
-                local moveVector = humanoid.MoveDirection * flySpeed * deltaTime * 60
-                character:TranslateBy(moveVector)
-            end
+    RunService.RenderStepped:Connect(function()
+        if flying and bodyVelocity and humanoid.MoveDirection.Magnitude > 0 then
+            bodyVelocity.Velocity = humanoid.MoveDirection * flySpeed
+        elseif flying and bodyVelocity then
+            bodyVelocity.Velocity = Vector3.zero
         end
     end)
 end
@@ -55,28 +45,22 @@ end
 local function stopFlying()
     flying = false
 
-    -- Re-enable humanoid states
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-    humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, true)
-
-    -- Restore animations
-    local animate = character:FindFirstChild("Animate")
-    if animate then
-        animate.Disabled = false
+    if bodyVelocity then
+        bodyVelocity:Destroy()
+        bodyVelocity = nil
     end
+
+    -- Re-enable all states
+    for _, state in ipairs(Enum.HumanoidStateType:GetEnumItems()) do
+        humanoid:SetStateEnabled(state, true)
+    end
+
+    -- Re-enable animations
+    local animate = character:FindFirstChild("Animate")
+    if animate then animate.Disabled = false end
 end
 
--- Listen for fly toggle changes
+-- Connect toggle
 Value:GetPropertyChangedSignal("Value"):Connect(function()
     if Value.Value then
         startFlying()
@@ -85,7 +69,7 @@ Value:GetPropertyChangedSignal("Value"):Connect(function()
     end
 end)
 
--- Start flying immediately if enabled
+-- Auto start
 if Value.Value then
     startFlying()
 end
