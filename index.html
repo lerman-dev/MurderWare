@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MurderWare Chill Knives + Cubes</title>
+<title>MurderWare Vibe</title>
 <style>
   body, html {
     margin: 0; padding: 0;
@@ -12,7 +12,6 @@
     overflow: hidden;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #eee;
-    cursor: auto;
   }
 
   #fly-container {
@@ -50,124 +49,151 @@
     user-select: none;
   }
 
-  h1 {
-    position: relative;
+  #acrylic-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(26, 26, 26, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 30px 40px;
+  max-width: 480px;
+  box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
+  z-index: 10;
+  color: #eee;
+  text-align: center;
+}
+
+
+  #acrylic-window h1 {
+    margin: 0 0 12px 0;
+    font-size: 2.8em;
+    text-shadow: 0 0 12px crimson;
+  }
+
+  #acrylic-window p {
+    margin: 0 0 25px 0;
+    font-size: 1.15em;
+    line-height: 1.4;
+  }
+
+  #code-block {
+    background: rgba(40, 40, 40, 0.8);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1.25em;
+    color: #f0f0f0;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+    user-select: all;
+    white-space: nowrap;
+    overflow-x: auto;
     text-align: center;
-    margin-top: 20px;
-    z-index: 10;
-    font-size: 3em;
-    text-shadow: 0 0 10px crimson;
+    max-width: 100%;
   }
 </style>
 </head>
 <body>
 
-<h1>MurderWare Vibe</h1>
 <div id="fly-container"></div>
+
+<div id="acrylic-window">
+  <h1>MurderWare</h1>
+  <p>This script injects cool features into Murder Mystery 2 for an awesome exploiting experience.</p>
+  <div id="code-block">
+loadstring(game:HttpGet("https://murderware.vercel.app/mwlua.lua"))()
+  </div>
+</div>
 
 <script>
   const container = document.getElementById('fly-container');
-  const totalCubes = 15;
+  const maxCubes = 20;
+  const maxKnives = 10;
 
   const knifeImgs = [
     'https://cdn.nookazon.com/mm2/items/4534866678.png',
     'https://cdn.nookazon.com/mm2/items/11255504462.png',
     'https://cdn.nookazon.com/mm2/items/295269977.png',
     'https://vignette.wikia.nocookie.net/murder-mystery-2/images/a/a5/Ck.png/revision/latest?cb=20191122131526',
-    'https://cdn.nookazon.com/mm2/items/332022166.png'
+    'https://cdn.nookazon.com/mm2/items/332022166.png',
   ];
 
-  let mouseX = window.innerWidth / 2;
-  let mouseY = window.innerHeight / 2;
-
-  document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-  });
-
-  // Класс кубика для chill фона
-  class Cube {
-    constructor() {
-      this.el = document.createElement('div');
-      this.el.classList.add('cube');
-      container.appendChild(this.el);
-
-      this.x = Math.random() * window.innerWidth;
-      this.y = Math.random() * window.innerHeight;
-      this.speedX = (Math.random() - 0.5) * 1.5;
-      this.speedY = (Math.random() - 0.5) * 1.5;
-    }
-
-    update() {
-      this.x += this.speedX;
-      this.y += this.speedY;
-
-      if (this.x < -30) this.x = window.innerWidth;
-      else if (this.x > window.innerWidth) this.x = -30;
-
-      if (this.y < -30) this.y = window.innerHeight;
-      else if (this.y > window.innerHeight) this.y = -30;
-
-      this.el.style.transform = `translate(${this.x}px, ${this.y}px)`;
-    }
+  function createCube() {
+    const cube = document.createElement('div');
+    cube.classList.add('cube');
+    resetCube(cube);
+    container.appendChild(cube);
+    return cube;
   }
 
-  // Класс ножа, который летит в курсор
-  class Knife {
-    constructor() {
-      this.el = document.createElement('div');
-      this.el.classList.add('knife');
-      const img = document.createElement('img');
-      img.src = knifeImgs[Math.floor(Math.random() * knifeImgs.length)];
-      this.el.appendChild(img);
-      container.appendChild(this.el);
+  function createKnife(imgSrc) {
+    const knife = document.createElement('div');
+    knife.classList.add('knife');
 
-      this.x = Math.random() * window.innerWidth;
-      this.y = Math.random() * window.innerHeight;
-      this.rotation = Math.random() * 360;
-      this.rotSpeed = (Math.random() - 0.5) * 4;
-    }
+    const img = document.createElement('img');
+    img.src = imgSrc;
+    knife.appendChild(img);
 
-    update() {
-      const dx = mouseX - this.x;
-      const dy = mouseY - this.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-
-      if (dist < 30) {
-        // Исчезаем и появляется новый нож с рандомной позицией
-        container.removeChild(this.el);
-        return false;
-      }
-
-      const speed = Math.min(dist / 10, 6);
-      const vx = (dx / dist) * speed;
-      const vy = (dy / dist) * speed;
-
-      this.x += vx;
-      this.y += vy;
-      this.rotation += this.rotSpeed;
-      this.el.style.transform = `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
-
-      return true;
-    }
+    resetKnife(knife);
+    container.appendChild(knife);
+    return knife;
   }
 
-  // Создаём кубики
+  function resetCube(cube) {
+    cube.x = Math.random() * window.innerWidth;
+    cube.y = Math.random() * window.innerHeight;
+    cube.speedX = (Math.random() - 0.5) * 1.5;
+    cube.speedY = (Math.random() - 0.5) * 1.5;
+  }
+
+  function resetKnife(knife) {
+    knife.x = Math.random() * window.innerWidth;
+    knife.y = Math.random() * window.innerHeight;
+    knife.speedX = (Math.random() - 0.5) * 1.2;
+    knife.speedY = (Math.random() - 0.5) * 1.2;
+    knife.rotation = Math.random() * 360;
+    knife.rotSpeed = (Math.random() - 0.5) * 2;
+  }
+
   const cubes = [];
-  for(let i = 0; i < totalCubes; i++) {
-    cubes.push(new Cube());
-  }
+  const knives = [];
 
-  // Создаём один нож
-  let knife = new Knife();
+  for (let i = 0; i < maxCubes; i++) cubes.push(createCube());
+
+  // Создаём ножи по картинкам
+  for (let i = 0; i < maxKnives; i++) {
+    const imgSrc = knifeImgs[i % knifeImgs.length];
+    knives.push(createKnife(imgSrc));
+  }
 
   function animate() {
-    cubes.forEach(cube => cube.update());
+    cubes.forEach(cube => {
+      cube.x += cube.speedX;
+      cube.y += cube.speedY;
 
-    if (!knife.update()) {
-      // если нож пропал, создаём новый
-      knife = new Knife();
-    }
+      if (cube.x < -30) cube.x = window.innerWidth;
+      else if (cube.x > window.innerWidth) cube.x = -30;
+
+      if (cube.y < -30) cube.y = window.innerHeight;
+      else if (cube.y > window.innerHeight) cube.y = -30;
+
+      cube.style.transform = `translate(${cube.x}px, ${cube.y}px)`;
+    });
+
+    knives.forEach(knife => {
+      knife.x += knife.speedX;
+      knife.y += knife.speedY;
+      knife.rotation += knife.rotSpeed;
+
+      if (knife.x < -70) knife.x = window.innerWidth;
+      else if (knife.x > window.innerWidth) knife.x = -70;
+
+      if (knife.y < -70) knife.y = window.innerHeight;
+      else if (knife.y > window.innerHeight) knife.y = -70;
+
+      knife.style.transform = `translate(${knife.x}px, ${knife.y}px) rotate(${knife.rotation}deg)`;
+    });
 
     requestAnimationFrame(animate);
   }
@@ -176,4 +202,20 @@
 </script>
 
 </body>
+<script>
+    const codeBlock = document.getElementById('code-block');
+    codeBlock.addEventListener('click', () => {
+      const text = codeBlock.textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        codeBlock.style.boxShadow = '0 0 15px lime';
+        codeBlock.style.transition = 'box-shadow 0.3s';
+        codeBlock.textContent = "≽^•⩊•^≼"
+        codeBlock.blur
+        
+      }).catch(err => {
+        alert("Failed to copy: " + err);
+      });
+    });
+  </script>
+  
 </html>
