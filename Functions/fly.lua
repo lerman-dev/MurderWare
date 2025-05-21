@@ -1,4 +1,4 @@
--- MurderWare FlyScript v1.0 (REAL FLY, not sliding)
+-- MurderWare FlyScript v1.1 (Stabilized Jetpack Fly)
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -9,14 +9,16 @@ local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
 local Value = player:WaitForChild("PlayerGui"):WaitForChild("MurderWareGUI"):WaitForChild("Fly")
 
-local flySpeed = 70
+local flySpeed = 50 -- помедленнее, чтобы не кикало и не запускало на орбиту
 local flying = false
-local bodyGyro, bodyVelocity
 local keys = {}
 
--- Input
-UserInputService.InputBegan:Connect(function(input, processed)
-	if not processed then
+local bodyGyro
+local bodyVelocity
+
+-- input
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed then
 		keys[input.KeyCode] = true
 	end
 end)
@@ -25,7 +27,6 @@ UserInputService.InputEnded:Connect(function(input)
 	keys[input.KeyCode] = false
 end)
 
--- Fly Logic
 local function startFlying()
 	if bodyGyro then bodyGyro:Destroy() end
 	if bodyVelocity then bodyVelocity:Destroy() end
@@ -33,33 +34,37 @@ local function startFlying()
 	humanoid.PlatformStand = true
 
 	bodyGyro = Instance.new("BodyGyro")
-	bodyGyro.P = 9e4
-	bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bodyGyro.P = 5000
+	bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
 	bodyGyro.CFrame = rootPart.CFrame
 	bodyGyro.Parent = rootPart
 
 	bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 	bodyVelocity.Velocity = Vector3.zero
-	bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-	bodyVelocity.P = 9e4
+	bodyVelocity.P = 4000
 	bodyVelocity.Parent = rootPart
 
 	flying = true
 
 	RunService.RenderStepped:Connect(function()
-		if flying then
-			local cam = workspace.CurrentCamera
-			bodyGyro.CFrame = cam.CFrame
+		if not flying then return end
 
-			local moveVec = Vector3.zero
-			if keys[Enum.KeyCode.W] then moveVec += cam.CFrame.LookVector end
-			if keys[Enum.KeyCode.S] then moveVec -= cam.CFrame.LookVector end
-			if keys[Enum.KeyCode.A] then moveVec -= cam.CFrame.RightVector end
-			if keys[Enum.KeyCode.D] then moveVec += cam.CFrame.RightVector end
-			if keys[Enum.KeyCode.Space] then moveVec += cam.CFrame.UpVector end
-			if keys[Enum.KeyCode.LeftControl] then moveVec -= cam.CFrame.UpVector end
+		local cam = workspace.CurrentCamera
+		bodyGyro.CFrame = cam.CFrame
 
-			bodyVelocity.Velocity = moveVec.Unit * flySpeed
+		local moveDir = Vector3.zero
+		if keys[Enum.KeyCode.W] then moveDir += cam.CFrame.LookVector end
+		if keys[Enum.KeyCode.S] then moveDir -= cam.CFrame.LookVector end
+		if keys[Enum.KeyCode.A] then moveDir -= cam.CFrame.RightVector end
+		if keys[Enum.KeyCode.D] then moveDir += cam.CFrame.RightVector end
+		if keys[Enum.KeyCode.Space] then moveDir += Vector3.new(0, 1, 0) end
+		if keys[Enum.KeyCode.LeftControl] then moveDir -= Vector3.new(0, 1, 0) end
+
+		if moveDir.Magnitude > 0 then
+			bodyVelocity.Velocity = moveDir.Unit * flySpeed
+		else
+			bodyVelocity.Velocity = Vector3.zero
 		end
 	end)
 end
