@@ -9,14 +9,14 @@ local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
 local Value = player:WaitForChild("PlayerGui"):WaitForChild("MurderWareGUI"):WaitForChild("Fly")
 
-local flySpeed = 50 -- скорость полёта
+local flySpeed = 35 -- flying speed
 local flying = false
 local keys = {}
 
 local bodyGyro
 local bodyVelocity
 
--- Слежение за вводом
+-- Track user input
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if not gameProcessed then
 		keys[input.KeyCode] = true
@@ -33,12 +33,12 @@ local function startFlying()
 
 	humanoid.PlatformStand = true
 
-	-- Лёгкий подлёт вверх при старте
-	rootPart.Velocity = Vector3.new(0, 50, 0)
+	-- Initial upward impulse for smooth takeoff
+	rootPart.Velocity = Vector3.new(0, 30, 0)
 
-	-- Задержка 0.25 сек для подлёта
+	-- Delay before enabling controlled flight
 	task.delay(0.25, function()
-		if not Value.Value then return end -- проверка, что ещё летаем
+		if not Value.Value then return end -- check if still flying
 
 		bodyGyro = Instance.new("BodyGyro")
 		bodyGyro.P = 5000
@@ -84,6 +84,7 @@ local function stopFlying()
 	humanoid.PlatformStand = false
 end
 
+-- Listen for toggle changes
 Value:GetPropertyChangedSignal("Value"):Connect(function()
 	if Value.Value then
 		startFlying()
@@ -92,6 +93,7 @@ Value:GetPropertyChangedSignal("Value"):Connect(function()
 	end
 end)
 
+-- Auto start if enabled
 if Value.Value then
 	startFlying()
 end
