@@ -50,21 +50,20 @@
   }
 
   #acrylic-window {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(26, 26, 26, 0.85);
-  backdrop-filter: blur(12px);
-  border-radius: 20px;
-  padding: 30px 40px;
-  max-width: 480px;
-  box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
-  z-index: 10;
-  color: #eee;
-  text-align: center;
-}
-
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(26, 26, 26, 0.85);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 30px 40px;
+    max-width: 480px;
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
+    z-index: 10;
+    color: #eee;
+    text-align: center;
+  }
 
   #acrylic-window h1 {
     margin: 0 0 12px 0;
@@ -92,6 +91,32 @@
     text-align: center;
     max-width: 100%;
   }
+
+  /* Блокировка экрана для мобильных */
+  #mobile-blocker {
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: #111;
+    color: crimson;
+    z-index: 9999;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+  }
+
+  #mobile-blocker h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px crimson;
+  }
+
+  #mobile-blocker p {
+    font-size: 1.4em;
+  }
 </style>
 </head>
 <body>
@@ -106,7 +131,27 @@ loadstring(game:HttpGet("https://murderware.vercel.app/mwlua.lua"))()
   </div>
 </div>
 
+<!-- Блокировка для мобил -->
+<div id="mobile-blocker" style="display:none;">
+  <h1>Access Denied</h1>
+  <p>Sorry, this site is not available on mobile devices.</p>
+</div>
+
 <script>
+  // Проверка мобильного устройства по userAgent
+  function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  if (isMobile()) {
+    // Показываем блокировку
+    document.getElementById('mobile-blocker').style.display = 'flex';
+    // Прячем остальной контент
+    document.getElementById('fly-container').style.display = 'none';
+    document.getElementById('acrylic-window').style.display = 'none';
+  }
+
+  // Твой анимационный код (оставляем без изменений)
   const container = document.getElementById('fly-container');
   const maxCubes = 20;
   const maxKnives = 10;
@@ -161,7 +206,6 @@ loadstring(game:HttpGet("https://murderware.vercel.app/mwlua.lua"))()
 
   for (let i = 0; i < maxCubes; i++) cubes.push(createCube());
 
-  // Создаём ножи по картинкам
   for (let i = 0; i < maxKnives; i++) {
     const imgSrc = knifeImgs[i % knifeImgs.length];
     knives.push(createKnife(imgSrc));
@@ -199,23 +243,21 @@ loadstring(game:HttpGet("https://murderware.vercel.app/mwlua.lua"))()
   }
 
   animate();
+
+  // Копирование текста из блока кода
+  const codeBlock = document.getElementById('code-block');
+  codeBlock.addEventListener('click', () => {
+    const text = codeBlock.textContent.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      codeBlock.style.boxShadow = '0 0 15px lime';
+      codeBlock.style.transition = 'box-shadow 0.3s';
+      codeBlock.textContent = "≽^•⩊•^≼"
+      codeBlock.blur
+    }).catch(err => {
+      alert("Failed to copy: " + err);
+    });
+  });
 </script>
 
 </body>
-<script>
-    const codeBlock = document.getElementById('code-block');
-    codeBlock.addEventListener('click', () => {
-      const text = codeBlock.textContent.trim();
-      navigator.clipboard.writeText(text).then(() => {
-        codeBlock.style.boxShadow = '0 0 15px lime';
-        codeBlock.style.transition = 'box-shadow 0.3s';
-        codeBlock.textContent = "≽^•⩊•^≼"
-        codeBlock.blur
-        
-      }).catch(err => {
-        alert("Failed to copy: " + err);
-      });
-    });
-  </script>
-  
 </html>
