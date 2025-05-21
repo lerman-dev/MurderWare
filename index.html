@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MurderWare Vibe with Image Knives</title>
+<title>MurderWare Vibe with Targeted Knives</title>
 <style>
   body, html {
     margin: 0; padding: 0;
@@ -12,6 +12,7 @@
     overflow: hidden;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #eee;
+    cursor: url('https://tobiasahlin.com/static/cursors/default@4x.png'), auto;
   }
 
   #fly-container {
@@ -69,7 +70,6 @@
   const maxCubes = 15;
   const maxKnives = 10;
 
-  // Список ножей-легенд
   const knifeImgs = [
     'https://cdn.nookazon.com/mm2/items/4534866678.png',
     'https://cdn.nookazon.com/mm2/items/11255504462.png',
@@ -77,6 +77,14 @@
     'https://vignette.wikia.nocookie.net/murder-mystery-2/images/a/a5/Ck.png/revision/latest?cb=20191122131526',
     'https://cdn.nookazon.com/mm2/items/332022166.png'
   ];
+
+  let mouseX = window.innerWidth / 2;
+  let mouseY = window.innerHeight / 2;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
 
   function createCube() {
     const cube = document.createElement('div');
@@ -109,8 +117,6 @@
   function resetKnife(knife) {
     knife.x = Math.random() * window.innerWidth;
     knife.y = Math.random() * window.innerHeight;
-    knife.speedX = (Math.random() - 0.5) * 3;
-    knife.speedY = (Math.random() - 0.5) * 3;
     knife.rotation = Math.random() * 360;
     knife.rotSpeed = (Math.random() - 0.5) * 4;
   }
@@ -135,16 +141,32 @@
       cube.style.transform = `translate(${cube.x}px, ${cube.y}px)`;
     });
 
-    knives.forEach(knife => {
-      knife.x += knife.speedX;
-      knife.y += knife.speedY;
+    knives.forEach((knife, index) => {
+      // Направляем нож к курсову
+      const dx = mouseX - knife.x;
+      const dy = mouseY - knife.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+
+      if(dist < 30) {
+        // Если нож "врезался" - убираем его и создаём новый в другом месте
+        container.removeChild(knife);
+        knives.splice(index, 1);
+        knives.push(createKnife());
+        return;
+      }
+
+      // Скорость полёта — чем дальше, тем быстрее (максимум 6)
+      const speed = Math.min(dist / 10, 6);
+
+      // Нормализуем вектор движения
+      const vx = (dx / dist) * speed;
+      const vy = (dy / dist) * speed;
+
+      knife.x += vx;
+      knife.y += vy;
+
+      // Вращение ножа
       knife.rotation += knife.rotSpeed;
-
-      if (knife.x < -70) knife.x = window.innerWidth;
-      else if (knife.x > window.innerWidth) knife.x = -70;
-
-      if (knife.y < -70) knife.y = window.innerHeight;
-      else if (knife.y > window.innerHeight) knife.y = -70;
 
       knife.style.transform = `translate(${knife.x}px, ${knife.y}px) rotate(${knife.rotation}deg)`;
     });
