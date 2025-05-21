@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MurderWare Vibe with Image Knives</title>
+<style>
+  body, html {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #eee;
+  }
+
+  #fly-container {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .cube {
+    position: absolute;
+    width: 30px; height: 30px;
+    background: crimson;
+    opacity: 0.7;
+    border-radius: 4px;
+    box-shadow: 0 0 10px crimson;
+    will-change: transform;
+  }
+
+  .knife {
+    position: absolute;
+    width: 70px;  /* можно подогнать под размер картинки */
+    height: 70px;
+    opacity: 0.9;
+    filter: drop-shadow(0 0 5px red);
+    will-change: transform;
+  }
+
+  .knife img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  h1 {
+    position: relative;
+    text-align: center;
+    margin-top: 20px;
+    z-index: 10;
+    font-size: 3em;
+    text-shadow: 0 0 10px crimson;
+  }
+</style>
+</head>
+<body>
+
+<h1>MurderWare Vibe</h1>
+<div id="fly-container"></div>
+
+<script>
+  const container = document.getElementById('fly-container');
+  const maxCubes = 15;
+  const maxKnives = 10;
+
+  // Путь к картинке ножа — просто меняй сюда любой URL или локальный файл
+  const knifeImgSrc = 'https://static.wikia.nocookie.net/murder-mystery-2/images/9/9c/DefaultKnifeMM2.png/revision/latest?cb=20210820005940'; // пример картинки ножа
+
+  function createCube() {
+    const cube = document.createElement('div');
+    cube.classList.add('cube');
+    resetCube(cube);
+    container.appendChild(cube);
+    return cube;
+  }
+
+  function createKnife() {
+    const knife = document.createElement('div');
+    knife.classList.add('knife');
+
+    const img = document.createElement('img');
+    img.src = knifeImgSrc;
+    knife.appendChild(img);
+
+    resetKnife(knife);
+    container.appendChild(knife);
+    return knife;
+  }
+
+  function resetCube(cube) {
+    cube.x = Math.random() * window.innerWidth;
+    cube.y = Math.random() * window.innerHeight;
+    cube.speedX = (Math.random() - 0.5) * 1.5;
+    cube.speedY = (Math.random() - 0.5) * 1.5;
+  }
+
+  function resetKnife(knife) {
+    knife.x = Math.random() * window.innerWidth;
+    knife.y = Math.random() * window.innerHeight;
+    knife.speedX = (Math.random() - 0.5) * 3;
+    knife.speedY = (Math.random() - 0.5) * 3;
+    knife.rotation = Math.random() * 360;
+    knife.rotSpeed = (Math.random() - 0.5) * 4;
+  }
+
+  const cubes = [];
+  const knives = [];
+
+  for (let i = 0; i < maxCubes; i++) cubes.push(createCube());
+  for (let i = 0; i < maxKnives; i++) knives.push(createKnife());
+
+  function animate() {
+    cubes.forEach(cube => {
+      cube.x += cube.speedX;
+      cube.y += cube.speedY;
+
+      if (cube.x < -30) cube.x = window.innerWidth;
+      else if (cube.x > window.innerWidth) cube.x = -30;
+
+      if (cube.y < -30) cube.y = window.innerHeight;
+      else if (cube.y > window.innerHeight) cube.y = -30;
+
+      cube.style.transform = translate(${cube.x}px, ${cube.y}px);
+    });
+
+    knives.forEach(knife => {
+      knife.x += knife.speedX;
+      knife.y += knife.speedY;
+      knife.rotation += knife.rotSpeed;
+
+      if (knife.x < -50) knife.x = window.innerWidth;
+      else if (knife.x > window.innerWidth) knife.x = -50;
+
+      if (knife.y < -50) knife.y = window.innerHeight;
+      else if (knife.y > window.innerHeight) knife.y = -50;
+
+      knife.style.transform = translate(${knife.x}px, ${knife.y}px) rotate(${knife.rotation}deg);
+    });
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+</script>
+
+</body>
+</html>
