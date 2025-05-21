@@ -34,7 +34,7 @@
 
   .knife {
     position: absolute;
-    width: 70px;  /* можно подогнать под размер картинки */
+    width: 70px;
     height: 70px;
     opacity: 0.9;
     filter: drop-shadow(0 0 5px red);
@@ -69,8 +69,14 @@
   const maxCubes = 15;
   const maxKnives = 10;
 
-  // Путь к картинке ножа — просто меняй сюда любой URL или локальный файл
-  const knifeImgSrc = 'https://static.wikia.nocookie.net/murder-mystery-2/images/9/9c/DefaultKnifeMM2.png/revision/latest?cb=20210820005940'; // пример картинки ножа
+  // Список ножей-легенд
+  const knifeImgs = [
+    'https://cdn.nookazon.com/mm2/items/4534866678.png',
+    'https://cdn.nookazon.com/mm2/items/11255504462.png',
+    'https://cdn.nookazon.com/mm2/items/295269977.png',
+    'https://vignette.wikia.nocookie.net/murder-mystery-2/images/a/a5/Ck.png/revision/latest?cb=20191122131526',
+    'https://cdn.nookazon.com/mm2/items/332022166.png'
+  ];
 
   function createCube() {
     const cube = document.createElement('div');
@@ -85,7 +91,7 @@
     knife.classList.add('knife');
 
     const img = document.createElement('img');
-    img.src = knifeImgSrc;
+    img.src = knifeImgs[Math.floor(Math.random() * knifeImgs.length)];
     knife.appendChild(img);
 
     resetKnife(knife);
@@ -126,7 +132,7 @@
       if (cube.y < -30) cube.y = window.innerHeight;
       else if (cube.y > window.innerHeight) cube.y = -30;
 
-      cube.style.transform = translate(${cube.x}px, ${cube.y}px);
+      cube.style.transform = `translate(${cube.x}px, ${cube.y}px)`;
     });
 
     knives.forEach(knife => {
@@ -134,13 +140,13 @@
       knife.y += knife.speedY;
       knife.rotation += knife.rotSpeed;
 
-      if (knife.x < -50) knife.x = window.innerWidth;
-      else if (knife.x > window.innerWidth) knife.x = -50;
+      if (knife.x < -70) knife.x = window.innerWidth;
+      else if (knife.x > window.innerWidth) knife.x = -70;
 
-      if (knife.y < -50) knife.y = window.innerHeight;
-      else if (knife.y > window.innerHeight) knife.y = -50;
+      if (knife.y < -70) knife.y = window.innerHeight;
+      else if (knife.y > window.innerHeight) knife.y = -70;
 
-      knife.style.transform = translate(${knife.x}px, ${knife.y}px) rotate(${knife.rotation}deg);
+      knife.style.transform = `translate(${knife.x}px, ${knife.y}px) rotate(${knife.rotation}deg)`;
     });
 
     requestAnimationFrame(animate);
