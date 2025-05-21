@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MurderWare Vibe with Targeted Knives</title>
+<title>MurderWare Chill Knives + Hunters</title>
 <style>
   body, html {
     margin: 0; padding: 0;
@@ -12,7 +12,7 @@
     overflow: hidden;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #eee;
-    cursor: url('https://tobiasahlin.com/static/cursors/default@4x.png'), auto;
+    cursor: auto; /* обычный курсор */
   }
 
   #fly-container {
@@ -21,16 +21,6 @@
     pointer-events: none;
     overflow: hidden;
     z-index: 0;
-  }
-
-  .cube {
-    position: absolute;
-    width: 30px; height: 30px;
-    background: crimson;
-    opacity: 0.7;
-    border-radius: 4px;
-    box-shadow: 0 0 10px crimson;
-    will-change: transform;
   }
 
   .knife {
@@ -67,8 +57,8 @@
 
 <script>
   const container = document.getElementById('fly-container');
-  const maxCubes = 15;
-  const maxKnives = 10;
+  const totalKnives = 10;
+  const hunterCount = 3; // Сколько ножей целятся в курсор
 
   const knifeImgs = [
     'https://cdn.nookazon.com/mm2/items/4534866678.png',
@@ -86,90 +76,89 @@
     mouseY = e.clientY;
   });
 
-  function createCube() {
-    const cube = document.createElement('div');
-    cube.classList.add('cube');
-    resetCube(cube);
-    container.appendChild(cube);
-    return cube;
-  }
+  class Knife {
+    constructor(isHunter) {
+      this.el = document.createElement('div');
+      this.el.classList.add('knife');
+      const img = document.createElement('img');
+      img.src = knifeImgs[Math.floor(Math.random() * knifeImgs.length)];
+      this.el.appendChild(img);
+      container.appendChild(this.el);
 
-  function createKnife() {
-    const knife = document.createElement('div');
-    knife.classList.add('knife');
+      this.x = Math.random() * window.innerWidth;
+      this.y = Math.random() * window.innerHeight;
+      this.rotation = Math.random() * 360;
+      this.rotSpeed = (Math.random() - 0.5) * 4;
+      this.isHunter = isHunter;
 
-    const img = document.createElement('img');
-    img.src = knifeImgs[Math.floor(Math.random() * knifeImgs.length)];
-    knife.appendChild(img);
+      // Скорость для “чила” и “охотников”
+      if (!isHunter) {
+        this.speedX = (Math.random() - 0.5) * 1.5;
+        this.speedY = (Math.random() - 0.5) * 1.5;
+      }
+    }
 
-    resetKnife(knife);
-    container.appendChild(knife);
-    return knife;
-  }
+    update() {
+      if (this.isHunter) {
+        // Летим к курсору
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
 
-  function resetCube(cube) {
-    cube.x = Math.random() * window.innerWidth;
-    cube.y = Math.random() * window.innerHeight;
-    cube.speedX = (Math.random() - 0.5) * 1.5;
-    cube.speedY = (Math.random() - 0.5) * 1.5;
-  }
+        if (dist < 30) {
+          // Убрать нож и вернуть новый в рандом место
+          container.removeChild(this.el);
+          return false; // удаляем из массива
+        }
 
-  function resetKnife(knife) {
-    knife.x = Math.random() * window.innerWidth;
-    knife.y = Math.random() * window.innerHeight;
-    knife.rotation = Math.random() * 360;
-    knife.rotSpeed = (Math.random() - 0.5) * 4;
-  }
+        const speed = Math.min(dist / 10, 6);
+        const vx = (dx / dist) * speed;
+        const vy = (dy / dist) * speed;
 
-  const cubes = [];
-  const knives = [];
+        this.x += vx;
+        this.y += vy;
 
-  for (let i = 0; i < maxCubes; i++) cubes.push(createCube());
-  for (let i = 0; i < maxKnives; i++) knives.push(createKnife());
+      } else {
+        // Просто летаем на фоне
+        this.x += this.speedX;
+        this.y += this.speedY;
 
-  function animate() {
-    cubes.forEach(cube => {
-      cube.x += cube.speedX;
-      cube.y += cube.speedY;
-
-      if (cube.x < -30) cube.x = window.innerWidth;
-      else if (cube.x > window.innerWidth) cube.x = -30;
-
-      if (cube.y < -30) cube.y = window.innerHeight;
-      else if (cube.y > window.innerHeight) cube.y = -30;
-
-      cube.style.transform = `translate(${cube.x}px, ${cube.y}px)`;
-    });
-
-    knives.forEach((knife, index) => {
-      // Направляем нож к курсову
-      const dx = mouseX - knife.x;
-      const dy = mouseY - knife.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-
-      if(dist < 30) {
-        // Если нож "врезался" - убираем его и создаём новый в другом месте
-        container.removeChild(knife);
-        knives.splice(index, 1);
-        knives.push(createKnife());
-        return;
+        // Зацикливание по краям
+        if (this.x < -70) this.x = window.innerWidth;
+        else if (this.x > window.innerWidth) this.x = -70;
+        if (this.y < -70) this.y = window.innerHeight;
+        else if (this.y > window.innerHeight) this.y = -70;
       }
 
-      // Скорость полёта — чем дальше, тем быстрее (максимум 6)
-      const speed = Math.min(dist / 10, 6);
+      // Вращение
+      this.rotation += this.rotSpeed;
+      this.el.style.transform = `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
+      return true; // оставляем в массиве
+    }
+  }
 
-      // Нормализуем вектор движения
-      const vx = (dx / dist) * speed;
-      const vy = (dy / dist) * speed;
+  let knives = [];
 
-      knife.x += vx;
-      knife.y += vy;
+  // Создаем охотников и "фоновиков"
+  for (let i = 0; i < hunterCount; i++) {
+    knives.push(new Knife(true));
+  }
+  for (let i = hunterCount; i < totalKnives; i++) {
+    knives.push(new Knife(false));
+  }
 
-      // Вращение ножа
-      knife.rotation += knife.rotSpeed;
+  function animate() {
+    knives = knives.filter(knife => knife.update());
 
-      knife.style.transform = `translate(${knife.x}px, ${knife.y}px) rotate(${knife.rotation}deg)`;
-    });
+    // Добавляем новых охотников, если пропали
+    while (knives.filter(k => k.isHunter).length < hunterCount) {
+      knives.push(new Knife(true));
+    }
+
+    // Добавляем новых фоновиков, если пропали
+    while (knives.length < totalKnives) {
+      knives.push(new Knife(false));
+    }
 
     requestAnimationFrame(animate);
   }
